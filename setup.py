@@ -4,7 +4,7 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 setup(
-    name='sample',
+    name='pytex',
     version='0.0.1',
     description='''A mixed language to automate compilation/scripting of Tex
     files''',
