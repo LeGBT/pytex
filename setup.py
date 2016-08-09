@@ -5,7 +5,7 @@ here = path.abspath(path.dirname(__file__))
 
 setup(
     name='pytex',
-    version='0.0.1',
+    version='0.0.3',
     description='''A mixed language to automate compilation/scripting of Tex
     files''',
     url='https://github.com/legbt/pytex',
