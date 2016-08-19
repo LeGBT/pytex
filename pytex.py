@@ -1,20 +1,22 @@
 import subprocess
 import re
-import os
 
 
+namespace = {}
 commands = [
     "lualatex",
     "-interaction=nonstopmode",
-    "-halt-on-error"
+    "-halt-on-error",
     ]
-out = "build"
+builddir = "build"
+outdir = "pdfs"
 documentclass = "article"
 documentclass_options = ["12pt", "a4paper"]
 packages = []
 
 preamble = [
-    r"\geometry{margin=20mm}",
+    r"""\geometry{top=25mm, bottom=25mm, left=30mm,
+right=35mm, heightrounded, marginparwidth=32mm, marginparsep=2mm}""",
     r"\setlength\parskip{\baselineskip}",
     r"\setlength\parindent{0pt}",
     r"\newunicodechar{ }{\ }",
@@ -22,7 +24,7 @@ preamble = [
     r"\setmathfont{Asana Math}",
     ]
 
-body = "Ce document est vide."
+body = [""]
 
 
 def pack(name, opt=""):
@@ -32,13 +34,62 @@ def pack(name, opt=""):
         packages.append(r"\usepackage{{{0}}}".format(name))
 
 pack("geometry")
-pack("amsmath", "fleqn")
+pack("amsmath")
 pack("fontspec")
 pack("unicode-math")
 pack("newunicodechar")
+pack("xcolor")
+pack("tikz")
+pack("pagecolor")
+pack("enumerate")
+pack("enumitem")
 
 
-def toTEX(documentclass, documentclass_options, packages, src, name):
+def fu(f):
+    namespace[f.__name__] = f
+
+
+def define(name, value):
+    namespace[name] = value
+
+
+def add(str_, *args):
+    str_ = re.sub('{', '{{', str_)
+    str_ = re.sub('}', '}}', str_)
+    str_ = re.sub('’([^’]*)’', r'{\1}', str_)
+    str_ = str_.format(*args)
+    body.append(str_)
+
+
+def section(str_):
+    body.append("\section{{{0}}}".format(str_))
+
+
+def subsection(str_):
+    body.append("\subsection{{{0}}}".format(str_))
+
+
+def unpythonize(str_, nm):
+    print("unpythonize ?", str_)
+    if str_[:2] == "’’":
+        code = str_[2:]
+        print("code:", code)
+        exec(code, {}, nm)
+        return str(nm["p"])
+    else:
+        return str_
+
+
+def parse(str_, nm):
+    pattern = re.compile(r"(’’[^’]*)’’")
+    s = pattern.split(str_)
+    s = [unpythonize(w, nm) for w in s]
+    return "".join(s)
+
+
+def toTEX(documentclass, documentclass_options, packages, body, name):
+    # nm = namespace
+    # body = parse(body, nm)
     texpath = name+".tex"
     if documentclass_options:
         opts = ",".join(documentclass_options)
@@ -49,7 +100,7 @@ def toTEX(documentclass, documentclass_options, packages, src, name):
             [dc] +
             packages +
             preamble +
-            [r"\begin{document}", src, r"\end{document}"])
+            [r"\begin{document}", body, r"\end{document}"])
     with open(name+".tex", "w") as f:
         f.write(tex)
     return texpath
@@ -61,12 +112,13 @@ def filter(output):
     print_next = [
             ".*?:[0-9]+:",
             "!",
+            "\w*TeX Warning",
             "\w*TeX warning",
             "^> [^<]",
             "^removed on input line",
                   ]
     info = ["Output written", "^This is \w*TeX"]
-    warnings = ["^(Und|Ov)erfull", "^(LaTeX|Package).*Warning"]
+    warnings = ["^(Und|Ov)erfull", "^Package.*Warning"]
     errors = [
         "^ No pages of output",
         "^(LaTeX|Package).*Error",
@@ -106,14 +158,19 @@ def filter(output):
 
 
 def compile(outname):
+    b = "".join(body)
+    buildname = "{0}/{1}".format(builddir, outname)
     texPath = toTEX(documentclass, documentclass_options,
-                    packages, body, outname)
+                    packages, b, buildname)
+    commands.append("--output-directory={0}/".format(builddir))
     args = commands + [texPath]
     print("\033[34;1mCompiling: {0}\033[0m".format(" ".join(args)))
     try:
-        my_env = os.environ
-        my_env["max_print_line"] = "1000"
-        output = subprocess.check_output(args, env=my_env).decode()
+        # my_env = os.environ
+        # my_env["max_print_line"] = "1000"
+        # output = subprocess.check_output(args, env=my_env).decode()
+        output = subprocess.check_output(args).decode()
+        subprocess.call(["mv", buildname+".pdf", outdir+"/"])
     except subprocess.CalledProcessError as e:
         output = (b"Failed compilation:\n"+e.output).decode()
     filter(output)
