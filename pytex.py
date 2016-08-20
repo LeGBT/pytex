@@ -2,7 +2,6 @@ import subprocess
 import re
 
 
-namespace = {}
 commands = [
     "lualatex",
     "-interaction=nonstopmode",
@@ -14,9 +13,10 @@ documentclass = "article"
 documentclass_options = ["12pt", "a4paper"]
 packages = []
 
+geometry = "top=25mm, bottom=25mm, left=30mm, right=35mm,\
+marginparwidth=32mm, marginparsep=2mm"
+
 preamble = [
-    r"""\geometry{top=25mm, bottom=25mm, left=30mm,
-right=35mm, heightrounded, marginparwidth=32mm, marginparsep=2mm}""",
     r"\setlength\parskip{\baselineskip}",
     r"\setlength\parindent{0pt}",
     r"\newunicodechar{ }{\ }",
@@ -25,6 +25,7 @@ right=35mm, heightrounded, marginparwidth=32mm, marginparsep=2mm}""",
     ]
 
 body = [""]
+correction_body = [""]
 
 
 def pack(name, opt=""):
@@ -45,46 +46,25 @@ pack("enumerate")
 pack("enumitem")
 
 
-def fu(f):
-    namespace[f.__name__] = f
-
-
-def define(name, value):
-    namespace[name] = value
-
-
 def add(str_, *args):
     str_ = re.sub('{', '{{', str_)
     str_ = re.sub('}', '}}', str_)
     str_ = re.sub('’([^’]*)’', r'{\1}', str_)
     str_ = str_.format(*args)
-    body.append(str_)
+    out = re.sub('!corr!', '%', str_)
+    body.append(out)
+    out = re.sub('!corr!', '', str_)
+    correction_body.append(str_)
 
 
 def section(str_):
-    body.append("\section{{{0}}}".format(str_))
+    body.append("\n\section{{{0}}}\n".format(str_))
+    correction_body.append("\n\section{{{0}}}\n".format(str_))
 
 
 def subsection(str_):
-    body.append("\subsection{{{0}}}".format(str_))
-
-
-def unpythonize(str_, nm):
-    print("unpythonize ?", str_)
-    if str_[:2] == "’’":
-        code = str_[2:]
-        print("code:", code)
-        exec(code, {}, nm)
-        return str(nm["p"])
-    else:
-        return str_
-
-
-def parse(str_, nm):
-    pattern = re.compile(r"(’’[^’]*)’’")
-    s = pattern.split(str_)
-    s = [unpythonize(w, nm) for w in s]
-    return "".join(s)
+    body.append("\n\subsection{{{0}}}\n".format(str_))
+    correction_body.append("\n\subsection{{{0}}}\n".format(str_))
 
 
 def toTEX(documentclass, documentclass_options, packages, body, name):
@@ -99,6 +79,7 @@ def toTEX(documentclass, documentclass_options, packages, body, name):
     tex = "\n".join(
             [dc] +
             packages +
+            ["\\geometry{", geometry, "}"] +
             preamble +
             [r"\begin{document}", body, r"\end{document}"])
     with open(name+".tex", "w") as f:
@@ -157,20 +138,29 @@ def filter(output):
         print(colors[r[1]]+lines[r[0]]+'\033[0m')
 
 
-def compile(outname):
+def compile(outname, correction=False, raw=False):
     b = "".join(body)
+    correction_b = "".join(correction_body)
+    print("correction:", correction)
     buildname = "{0}/{1}".format(builddir, outname)
+    correctionbuildname = "{0}/{1}".format(builddir, outname+"_correction")
     texPath = toTEX(documentclass, documentclass_options,
                     packages, b, buildname)
+    correctiontexPath = toTEX(documentclass, documentclass_options,
+                              packages, correction_b, correctionbuildname)
     commands.append("--output-directory={0}/".format(builddir))
     args = commands + [texPath]
+    correctionargs = commands + [correctiontexPath]
     print("\033[34;1mCompiling: {0}\033[0m".format(" ".join(args)))
     try:
-        # my_env = os.environ
-        # my_env["max_print_line"] = "1000"
-        # output = subprocess.check_output(args, env=my_env).decode()
         output = subprocess.check_output(args).decode()
         subprocess.call(["mv", buildname+".pdf", outdir+"/"])
+        if correction:
+            subprocess.check_output(correctionargs).decode()
+            subprocess.call(["mv", correctionbuildname+".pdf", outdir+"/"])
     except subprocess.CalledProcessError as e:
         output = (b"Failed compilation:\n"+e.output).decode()
-    filter(output)
+    if not raw:
+        filter(output)
+    else:
+        print(output)
