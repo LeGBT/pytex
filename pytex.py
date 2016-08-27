@@ -14,7 +14,7 @@ documentclass = "article"
 documentclass_options = ["11pt", "a4paper"]
 packages = []
 
-geometry = "top=25mm, bottom=25mm, left=10mm, right=10mm"
+geometry = "top=10mm, bottom=10mm, left=10mm, right=10mm"
 
 preamble = [
     r"\setlength\parskip{\baselineskip}",
