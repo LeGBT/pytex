@@ -176,41 +176,15 @@ def question(q, count, a, b, c, d, *args):
     rep2 = order.index(1)
     rep3 = order.index(2)
     rep4 = order.index(3)
-    x1 = "\hcl" if (rep1//2) else "0"
-    y1 = "2" if (rep1 % 2) else "0"
-    x2 = "\hcl" if (rep2//2) else "0"
-    y2 = "2" if (rep2 % 2) else "0"
-    x3 = "\hcl" if (rep3//2) else "0"
-    y3 = "2" if (rep3 % 2) else "0"
-    x4 = "\hcl" if (rep4//2) else "0"
-    y4 = "2" if (rep4 % 2) else "0"
-    add("\\def\\pytexq{"+q+"}%\n" +
-        "\\def\\pytexa{"+res[order[0]]+"}%\n" +
-        "\\def\\pytexb{"+res[order[1]]+"}%\n" +
-        "\\def\\pytexc{"+res[order[2]]+"}%\n" +
-        "\\def\\pytexd{"+res[order[3]]+"}%\n", *args)
-    add("\\boolatrue" +
-        "\\def\\pytexxa{"+x1+"}%\n" +
-        "\\def\\pytexya{"+y1+"}%\n")
-    if count > 1:
-        add("\\boolbtrue" +
-            "\\def\\pytexxb{"+x2+"}%\n" +
-            "\\def\\pytexyb{"+y2+"}%\n")
-    else:
-        add("\\boolbfalse")
-
-    if count > 2:
-        add("\\boolctrue" +
-            "\\def\\pytexxc{"+x3+"}%\n" +
-            "\\def\\pytexyc{"+y3+"}%\n")
-    else:
-        add("\\boolcfalse")
-
-    if count > 3:
-        add("\\booldtrue" +
-            "\\def\\pytexxd{"+x4+"}%\n" +
-            "\\def\\pytexyd{"+y4+"}%\n")
-    else:
-        add("\\booldfalse")
-
-    add("\\qcm")
+    bool1 = "1" if rep1 < count else "0"
+    bool2 = "1" if rep2 < count else "0"
+    bool3 = "1" if rep3 < count else "0"
+    bool4 = "1" if rep4 < count else "0"
+    add(r"""\qcm
+    {"""+q+r"""}
+    {"""+res[order[0]]+r"""}
+    {"""+res[order[1]]+r"""}
+    {"""+res[order[2]]+r"""}
+    {"""+res[order[3]]+r"""}
+    {"""+bool1+"} {"+bool2+"} {"+bool3+"} {"+bool4+r"""}
+""", *args)
