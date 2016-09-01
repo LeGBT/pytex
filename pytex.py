@@ -172,14 +172,10 @@ def question(q, count, a, b, c, d, *args):
     res = [a, b, c, d]
     order = [0, 1, 2, 3]
     shuffle(order)
-    rep1 = order.index(0)
-    rep2 = order.index(1)
-    rep3 = order.index(2)
-    rep4 = order.index(3)
-    bool1 = "1" if rep1 < count else "0"
-    bool2 = "1" if rep2 < count else "0"
-    bool3 = "1" if rep3 < count else "0"
-    bool4 = "1" if rep4 < count else "0"
+    bool1 = "1" if order[0] < count else "0"
+    bool2 = "1" if order[1] < count else "0"
+    bool3 = "1" if order[2] < count else "0"
+    bool4 = "1" if order[3] < count else "0"
     add(r"""\qcm
     {"""+q+r"""}
     {"""+res[order[0]]+r"""}
