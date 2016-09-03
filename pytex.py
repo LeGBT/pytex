@@ -20,9 +20,29 @@ preamble = [
     r"\setlength\parskip{\baselineskip}",
     r"\setlength\parindent{0pt}",
     r"\newunicodechar{ }{\ }",
-    r"\setmainfont{Crimson Text}",
-    r"\setmathfont{Asana Math}",
     ]
+
+lowvisionfonts = r"""
+\setmathrm[Scale=1.5]{Bitstream Vera Sans}
+\setmainfont[Scale=1.5]{Bitstream Vera Sans}
+\setmathfont[Scale=1.5]{Asana Math}
+\setmathfont[range=\mathup/{num, latin, Latin}, Scale=1.5]
+    {Bitstream Vera Sans}
+\setmathfont[range=\mathit/{num, latin, Latin}, Scale=1.5]
+    {Bitstream Vera Sans}
+\renewcommand{\baselinestretch}{1.8}
+\tikzset{every picture/.style={line width=1mm, scale=1}}
+"""
+
+standardfonts = r"""
+\setmainfont{Crimson Text}
+\setmathfont{Asana Math}
+"""
+
+
+conditions = {"standard": 1,
+              "correction": 0,
+              "lowvision": 0, }
 
 body = [""]
 
@@ -62,23 +82,41 @@ def subsection(str_):
     body.append("\n\subsection{{{0}}}\n".format(str_))
 
 
+def lowvision(_bool=True):
+    conditions["lowvision"] = _bool
+
+
+def correction(_bool=True):
+    conditions["correction"] = _bool
+
+
+def get_conditionnals(cond):
+    out = []
+    for s in conditions.keys():
+        b = "true" if s == cond else "false"
+        out.append("\\"+s+b)
+    return out
+
+
 def toTEX(documentclass, documentclass_options,
-          packages, body, name, correction=False):
+          packages, body, name, cond):
     texpath = name+".tex"
     if documentclass_options:
         opts = ",".join(documentclass_options)
         dc = r"\documentclass[{0}]{{{1}}}".format(opts, documentclass)
     else:
         dc = r"\documentclass{{{0}}}".format(documentclass)
-    if correction:
-        conditionnals = ["\\correctiontrue"]
+    conditionnals = get_conditionnals(cond)
+    if cond == "lowvision":
+        font = [lowvisionfonts]
     else:
-        conditionnals = ["\\correctionfalse"]
+        font = [standardfonts]
     tex = "\n".join(
             [dc] +
             [r"\usepackage["+geometry+r"]{geometry}"] +
             packages +
             preamble +
+            font +
             conditionnals +
             [r"\begin{document}", body, r"\end{document}"])
     with open(name+".tex", "w") as f:
@@ -137,32 +175,26 @@ def filter(output):
         print(colors[r[1]]+lines[r[0]]+'\033[0m')
 
 
-def compile(outname, correction=False, raw=False):
+def compile(outname, raw=False):
     b = "".join(body)
-    if correction:
-        print("\033[34;1mMode correction.\033[0m")
-    buildname = "{0}/{1}".format(builddir, outname)
-    correctionbuildname = "{0}/{1}".format(builddir, outname+"_correction")
-    texPath = toTEX(documentclass, documentclass_options,
-                    packages, b, buildname)
-    corrtexPath = toTEX(documentclass, documentclass_options,
-                        packages, b, correctionbuildname, correction=True)
-    commands.append("--output-directory={0}/".format(builddir))
-    args = commands + [texPath]
-    correctionargs = commands + [corrtexPath]
-    print("\033[34;1mCompilation : {0}\033[0m".format(" ".join(args)))
-    try:
-        output = subprocess.check_output(args).decode()
-        subprocess.call(["mv", buildname+".pdf", outdir+"/"])
-        if correction:
-            subprocess.check_output(correctionargs).decode()
-            subprocess.call(["mv", correctionbuildname+".pdf", outdir+"/"])
-    except subprocess.CalledProcessError as e:
-        output = (b"Erreur de compilation :\n"+e.output).decode()
-    if not raw:
-        filter(output)
-    else:
-        print(output)
+    for (c, v) in conditions.items():
+        if v:
+            print("\033[34;1mMode "+c+".\033[0m")
+        buildname = "{0}/{1}".format(builddir, outname+"_"+c)
+        texPath = toTEX(documentclass, documentclass_options,
+                        packages, b, buildname, c)
+        commands.append("--output-directory={0}/".format(builddir))
+        args = commands + [texPath]
+        print("\033[34;1mCompilation : {0}\033[0m".format(" ".join(args)))
+        try:
+            output = subprocess.check_output(args).decode()
+            subprocess.call(["mv", buildname+".pdf", outdir+"/"])
+        except subprocess.CalledProcessError as e:
+            output = (b"Erreur de compilation :\n"+e.output).decode()
+        if not raw:
+            filter(output)
+        else:
+            print(output)
 
 
 # macros
