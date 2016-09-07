@@ -14,10 +14,9 @@ documentclass = "article"
 documentclass_options = ["11pt", "a4paper"]
 packages = []
 
-geometry = "top=10mm, bottom=10mm, left=10mm, right=10mm"
+geometry = "top=15mm, bottom=15mm, left=10mm, right=10mm"
 
 preamble = [
-    r"\setlength\parskip{\baselineskip}",
     r"\setlength\parindent{0pt}",
     r"\newunicodechar{ }{\ }",
     ]
