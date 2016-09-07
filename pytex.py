@@ -180,21 +180,24 @@ def compile(outname, raw=False):
     for (c, v) in conditions.items():
         if v:
             print("\033[34;1mMode "+c+".\033[0m")
-        buildname = "{0}/{1}".format(builddir, outname+"_"+c)
-        texPath = toTEX(documentclass, documentclass_options,
-                        packages, b, buildname, c)
-        commands.append("--output-directory={0}/".format(builddir))
-        args = commands + [texPath]
-        print("\033[34;1mCompilation : {0}\033[0m".format(" ".join(args)))
-        try:
-            output = subprocess.check_output(args).decode()
-            subprocess.call(["mv", buildname+".pdf", outdir+"/"])
-        except subprocess.CalledProcessError as e:
-            output = (b"Erreur de compilation :\n"+e.output).decode()
-        if not raw:
-            filter(output)
-        else:
-            print(output)
+            if c != "standard":
+                buildname = "{0}/{1}".format(builddir, outname+"_"+c)
+            else:
+                buildname = "{0}/{1}".format(builddir, outname)
+            texPath = toTEX(documentclass, documentclass_options,
+                            packages, b, buildname, c)
+            commands.append("--output-directory={0}/".format(builddir))
+            args = commands + [texPath]
+            print("\033[34;1mCompilation : {0}\033[0m".format(" ".join(args)))
+            try:
+                output = subprocess.check_output(args).decode()
+                subprocess.call(["mv", buildname+".pdf", outdir+"/"])
+            except subprocess.CalledProcessError as e:
+                output = (b"Erreur de compilation :\n"+e.output).decode()
+            if not raw:
+                filter(output)
+            else:
+                print(output)
 
 
 # macros
