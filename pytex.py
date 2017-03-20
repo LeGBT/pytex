@@ -10,6 +10,7 @@ commands = [
     ]
 builddir = "build/2016-2017"
 outdir = "pdfs/2016-2017"
+graphicsdir = "figs/"
 documentclass = "article"
 documentclass_options = ["11pt", "a4paper"]
 packages = []
@@ -117,6 +118,7 @@ def toTEX(documentclass, documentclass_options,
             preamble +
             font +
             conditionnals +
+            [r"\graphicspath{{"+graphicsdir+r"}}"] +
             [r"\begin{document}", body, r"\end{document}"])
     with open(name+".tex", "w") as f:
         f.write(tex)
