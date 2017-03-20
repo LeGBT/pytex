@@ -62,7 +62,7 @@ pack("tikz")
 pack("pagecolor")
 pack("enumerate")
 pack("enumitem")
-pack("siunitx", "locale = FR")
+pack("siunitx", "locale = FR, detect-all")
 pack("macro")
 
 
